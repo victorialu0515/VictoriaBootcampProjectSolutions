@@ -1,33 +1,42 @@
 //
-//  ContentView.swift
-//  WorkoutLog
+//  LogView.swift
+//  WorkoutLogSolutions
 //
-//  Created by Alec Hance on 7/27/25.
+//  Created by Victoria Lu on 2025-10-13.
 //
 
 import SwiftUI
 
-enum Muscle {
-    case chest, triceps, biceps, shoulders
-}
-
-struct Workout: Identifiable {
-    var id: UUID = UUID()
-    
-    var name: String
-    var date: String
-    var numberSets: Int
-    var muscles: [Muscle]
-    var numberPRs: Int
-}
 
 struct LogView: View {
-    @State var workouts: [Workout] = [Workout(name: "Push", date: "Mon 2", numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2), Workout(name: "Pull", date: "Tue 3", numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2), Workout(name: "Legs", date: "Wed 4", numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2)]
+    @StateObject var viewModel = UserViewModel()
+    @State var lifts: [Lift] = [
+        Lift(name: "Push", date: Date.from(year: 2025, month: 6, day: 2), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2),
+        Lift(name: "Pull", date: Date.from(year: 2025, month: 6, day: 3), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2),
+        Lift(name: "Legs", date: Date.from(year: 2025, month: 6, day: 4), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2)
+    ]
+
+    let cardios: [Cardio] = [
+        Cardio(name: "Elliptical", date: Date.from(year: 2025, month: 8, day: 20), minutes: 30, calories: 250, maxHeartRate: 140),
+        Cardio(name: "Seated Bike", date: Date.from(year: 2025, month: 8, day: 19), minutes: 45, calories: 400, maxHeartRate: 160)
+    ]
+
     @State var showingSheet: Bool = false
     @State var inputName: String = ""
     @State var inputSets: String = ""
     @State var inputPRs: String = ""
-    @State var inputDate: String = ""
+    @State var inputDate: Date = Date()
+
+    
+    @State private var selectedSegment: Segment = .lifts
+
+    enum Segment: String, CaseIterable, Identifiable {
+        case lifts = "Lifts"
+        case cardio = "Cardio"
+        
+        var id: String { self.rawValue }
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             VStack {
@@ -38,16 +47,31 @@ struct LogView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10)
-                
+
                 belowTitleHStack.padding(.top, 4)
-                
-                ScrollView {
-                    ForEach(workouts) { workout in
-                        WorkoutCard(workout: workout)
+
+                Picker("Segment", selection: $selectedSegment) {
+                    ForEach(Segment.allCases) { segment in
+                        Text(segment.rawValue).tag(segment)
                     }
                 }
-                
-                //Spacer()
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.vertical)
+
+                ScrollView {
+                    VStack(spacing: 10) {
+                        if selectedSegment == .lifts {
+                            ForEach(viewModel.sortWorkouts(lifts)) { lift in
+                                LiftCard(lift: lift)
+                            }
+                        } else {
+                            ForEach(viewModel.sortWorkouts(cardios)) { cardio in
+                                CardioCard(cardio: cardio)
+                            }
+                        }
+                    }
+                }
+
             }
             .padding(.horizontal, 10)
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -57,7 +81,7 @@ struct LogView: View {
             }
         }
     }
-    
+
     var sheetView: some View {
         VStack(alignment: .leading) {
             Button {
@@ -84,20 +108,36 @@ struct LogView: View {
                     TextField("", text: $inputPRs, prompt: Text("number of PRs").foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6)))
                         .foregroundStyle(.white)
                     Rectangle().frame(height: 1).foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
-                    TextField("", text: $inputDate, prompt: Text("Weekday Date").foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6)))
-                        .foregroundStyle(.white)
+
+                    
+                    HStack {
+                        Text("Start Date: ")
+                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                        
+                        DatePicker(
+                            "",
+                            selection: $inputDate,
+                            displayedComponents: .date
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .colorScheme(.dark)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(25)
-                   
+                
+
             }.frame(height: UIScreen.main.bounds.height * 0.2)
             Button {
                 showingSheet.toggle()
-                workouts.append(Workout(name: inputName, date: inputDate, numberSets: Int(inputSets) ?? -1, muscles: [], numberPRs: Int(inputPRs) ?? -1))
+                lifts.append(Lift(name: inputName, date: inputDate, numberSets: Int(inputSets) ?? -1, muscles: [], numberPRs: Int(inputPRs) ?? -1))
                 inputName = ""
                 inputSets = ""
                 inputPRs = ""
-                inputDate = ""
+                inputDate = Date()
             } label: {
                 Text("Finish")
                     .foregroundStyle(.cyan)
@@ -106,7 +146,7 @@ struct LogView: View {
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(10)
     }
-    
+
     var topButtonHStack: some View {
         HStack {
             Button {
@@ -115,9 +155,9 @@ struct LogView: View {
                 Text("Edit")
                     .foregroundStyle(.cyan)
             }
-            
+
             Spacer()
-            
+
             Button {
                 print("Clicked plus")
                 showingSheet.toggle()
@@ -127,7 +167,7 @@ struct LogView: View {
             }
         }
     }
-    
+
     var belowTitleHStack: some View {
         HStack {
             Text("June 2025")
@@ -137,53 +177,8 @@ struct LogView: View {
                 .foregroundStyle(.gray)
         }
     }
-    
-    
-}
 
-struct WorkoutCard: View {
-    var workout: Workout
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.1, green: 0.1, blue: 0.1))
-                .frame(height: UIScreen.main.bounds.height * 0.16)
-            HStack(alignment: .top) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.clear)
-                        .stroke(.white)
-                        .frame(width: UIScreen.main.bounds.width * 0.125, height: UIScreen.main.bounds.width * 0.125)
-                        
-                    VStack {
-                        Text("\(workout.date.split(separator: " ")[0])")
-                            .foregroundStyle(.white)
-                            .padding(.top, 1)
-                        Text("\(workout.date.split(separator: " ")[1])")
-                            .foregroundStyle(.white)
-                            .padding(.bottom, 1)
-                    }
-                }.frame(width: UIScreen.main.bounds.width * 0.15, height: UIScreen.main.bounds.width * 0.15)
-                    .padding(.trailing, 4)
-                VStack(alignment: .leading) {
-                    Text(workout.name)
-                        .bold()
-                        .font(.system(size: 25))
-                        .foregroundStyle(.white)
-                    Text("\(workout.numberSets) total sets")
-                        .foregroundStyle(.white)
-                    Text("\(workout.muscles.count) Muscles Hit")
-                        .foregroundStyle(.white)
-                    Text("\(workout.numberPRs) PRs")
-                        .foregroundStyle(.white)
-                }
-                Spacer()
-                Text("90 min")
-                    .foregroundStyle(.gray)
-            }.padding(10)
-            
-        }
-    }
+
 }
 
 #Preview {
