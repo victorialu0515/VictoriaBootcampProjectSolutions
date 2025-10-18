@@ -1,14 +1,12 @@
 //
-//  LogView.swift
-//  WorkoutLogSolutions
+//  ContentView.swift
+//  WorkoutLog
 //
-//  Created by Victoria Lu on 2025-10-13.
+//  Created by Alec Hance on 7/27/25.
 //
 
 import SwiftUI
 
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-========
 extension Date {
     func monthDayMultiline() -> String {
         let formatter = DateFormatter()
@@ -27,51 +25,20 @@ extension Array where Element: Workout {
 //        }
     }
 }
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
 
 
 
 
 struct LogView: View {
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-    @StateObject var viewModel = UserViewModel()
-    @State var lifts: [Lift] = [
-        Lift(name: "Push", date: Date.from(year: 2025, month: 6, day: 2), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2),
-        Lift(name: "Pull", date: Date.from(year: 2025, month: 6, day: 3), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2),
-        Lift(name: "Legs", date: Date.from(year: 2025, month: 6, day: 4), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2)
-    ]
-
-    let cardios: [Cardio] = [
-        Cardio(name: "Elliptical", date: Date.from(year: 2025, month: 8, day: 20), minutes: 30, calories: 250, maxHeartRate: 140),
-        Cardio(name: "Seated Bike", date: Date.from(year: 2025, month: 8, day: 19), minutes: 45, calories: 400, maxHeartRate: 160)
-    ]
-
-========
     @State var lifts: [Lift] = [Lift(name: "Push", date: Calendar.current.date(byAdding: .day, value: 0, to: Date()) ?? Date(), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2), Lift(name: "Pull", date: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date(), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2), Lift(name: "Legs", date: Calendar.current.date(byAdding: .day, value: 2, to: Date()) ?? Date(), numberSets: 15, muscles: [.chest, .biceps, .triceps], numberPRs: 2)]
     @State var cardios: [Cardio] = [Cardio(name: "Seated Bike", date: Calendar.current.date(byAdding: .day, value: -2, to: Date()) ?? Date(), minutes: 30, calories: 300, maxHR: 150), Cardio(name: "Eliptical", date: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date(), minutes: 45, calories: 400, maxHR: 140)]
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
     @State var showingSheet: Bool = false
     @State var inputName: String = ""
     @State var inputSets: String = ""
     @State var inputPRs: String = ""
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-    @State var inputDate: Date = Date()
-
-    
-    @State private var selectedSegment: Segment = .lifts
-
-    enum Segment: String, CaseIterable, Identifiable {
-        case lifts = "Lifts"
-        case cardio = "Cardio"
-        
-        var id: String { self.rawValue }
-    }
-    
-========
     @State var inputDate: String = ""
     @State var showCardio: Bool = false
     @State var insertDate: Date = Date()
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
     var body: some View {
         GeometryReader { geometry in
             VStack {
@@ -82,33 +49,8 @@ struct LogView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 10)
-
+                
                 belowTitleHStack.padding(.top, 4)
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-
-                Picker("Segment", selection: $selectedSegment) {
-                    ForEach(Segment.allCases) { segment in
-                        Text(segment.rawValue).tag(segment)
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.vertical)
-
-                ScrollView {
-                    VStack(spacing: 10) {
-                        if selectedSegment == .lifts {
-                            ForEach(viewModel.sortWorkouts(lifts)) { lift in
-                                LiftCard(lift: lift)
-                            }
-                        } else {
-                            ForEach(viewModel.sortWorkouts(cardios)) { cardio in
-                                CardioCard(cardio: cardio)
-                            }
-                        }
-                    }
-                }
-
-========
                 
                 Picker("", selection: $showCardio) {
                     Text("Lifts").tag(false)
@@ -133,7 +75,6 @@ struct LogView: View {
                 
                 
                 //Spacer()
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
             }
             .padding(.horizontal, 10)
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -143,7 +84,7 @@ struct LogView: View {
             }
         }
     }
-
+    
     var sheetView: some View {
         VStack(alignment: .leading) {
             Button {
@@ -170,25 +111,6 @@ struct LogView: View {
                     TextField("", text: $inputPRs, prompt: Text("number of PRs").foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6)))
                         .foregroundStyle(.white)
                     Rectangle().frame(height: 1).foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-
-                    
-                    HStack {
-                        Text("Start Date: ")
-                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
-                        
-                        DatePicker(
-                            "",
-                            selection: $inputDate,
-                            displayedComponents: .date
-                        )
-                        .labelsHidden()
-                        .datePickerStyle(.compact)
-                        .colorScheme(.dark)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-========
                     HStack {
                         DatePicker(
                             "Start Date:",
@@ -199,24 +121,18 @@ struct LogView: View {
                             
                     }.frame(width: UIScreen.main.bounds.width * 0.55)
     
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(25)
-                
-
+                   
             }.frame(height: UIScreen.main.bounds.height * 0.2)
             Button {
                 showingSheet.toggle()
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-                lifts.append(Lift(name: inputName, date: inputDate, numberSets: Int(inputSets) ?? -1, muscles: [], numberPRs: Int(inputPRs) ?? -1))
-========
                 lifts.append(Lift(name: inputName, date: insertDate, numberSets: Int(inputSets) ?? -1, muscles: [], numberPRs: Int(inputPRs) ?? -1))
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
                 inputName = ""
                 inputSets = ""
                 inputPRs = ""
-                inputDate = Date()
+                inputDate = ""
             } label: {
                 Text("Finish")
                     .foregroundStyle(.cyan)
@@ -225,7 +141,7 @@ struct LogView: View {
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(10)
     }
-
+    
     var topButtonHStack: some View {
         HStack {
             Button {
@@ -234,9 +150,9 @@ struct LogView: View {
                 Text("Edit")
                     .foregroundStyle(.cyan)
             }
-
+            
             Spacer()
-
+            
             Button {
                 print("Clicked plus")
                 showingSheet.toggle()
@@ -246,7 +162,7 @@ struct LogView: View {
             }
         }
     }
-
+    
     var belowTitleHStack: some View {
         HStack {
             Text("2025")
@@ -256,10 +172,10 @@ struct LogView: View {
                 .foregroundStyle(.gray)
         }
     }
+    
+    
+}
 
-<<<<<<<< HEAD:WorkoutLogSolutions/View/LogView.swift
-
-========
 struct WorkoutCard: View {
     var workout: any Workout
     var body: some View {
@@ -301,7 +217,6 @@ struct WorkoutCard: View {
             
         }
     }
->>>>>>>> 1408b9ac23759501ef6fe0e8c274492f5984afaf:WorkoutLogSolutions/Views/ContentView.swift
 }
 
 #Preview {
