@@ -7,9 +7,25 @@
 import SwiftUI
 
 
-enum Muscle {
-    case chest, triceps, biceps, shoulders
+enum Muscle: CaseIterable, Identifiable, Hashable {
+    case chest, triceps, biceps, shoulders, quads, hamstrings, back
+    
+    var id: Self { self }
+    
+    var displayName: String {
+        switch self {
+        case .chest: return "Chest"
+        case .triceps: return "Triceps"
+        case .biceps: return "Biceps"
+        case .shoulders: return "Shoulders"
+        case .quads: return "Quads"
+        case .hamstrings: return "Hamstrings"
+        case .back: return "Back"
+        }
+    }
 }
+
+
 
 
 

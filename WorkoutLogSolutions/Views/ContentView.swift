@@ -3,7 +3,7 @@
 //  WorkoutLog
 //
 //  Created by Alec Hance on 7/27/25.
-//
+// Victoria Lu
 
 import SwiftUI
 
@@ -15,14 +15,12 @@ extension Date {
     }
 }
 
+
 extension Array where Element: Workout {
-    func sortedByDate(_ key: (Element) -> Date, ascending: Bool = true) -> [Element] {
+    func sortedBy<Value: Comparable>(_ key: (Element) -> Value, ascending: Bool = true) -> [Element] {
         self.sorted {
             ascending ? key($0) < key($1) : key($0) > key($1)
         }
-//        self.sorted { first, second in
-//            ascending ? key(first) < key(second) : key(first) > key(second)
-//        }
     }
 }
 
@@ -39,52 +37,70 @@ struct LogView: View {
     @State var inputDate: String = ""
     @State var showCardio: Bool = false
     @State var insertDate: Date = Date()
+    @State var selectedMuscles: [Muscle] = []
+    @State var showingMusclePicker = false
+    
     var body: some View {
-        GeometryReader { geometry in
-            VStack {
-                topButtonHStack
-                Text("Log")
-                    .font(.system(size: 35))
-                    .bold()
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 10)
-                
-                belowTitleHStack.padding(.top, 4)
-                
-                Picker("", selection: $showCardio) {
-                    Text("Lifts").tag(false)
-                    Text("Cardio")
-                        .tag(true)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .tint(.white)
-                .foregroundStyle(.red)
-                
-                ScrollView {
-                    if !showCardio {
-                        ForEach(lifts.sortedByDate(\.date)) { workout in
-                            WorkoutCard(workout: workout)
-                        }
-                    } else {
-                        ForEach(cardios.sortedByDate(\.date, ascending: false)) { cardio in
-                            WorkoutCard(workout: cardio)
+        NavigationStack {
+            GeometryReader { geometry in
+                VStack {
+                    topButtonHStack
+                    Text("Log")
+                        .font(.system(size: 35))
+                        .bold()
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 10)
+                    
+                    belowTitleHStack.padding(.top, 4)
+                    
+                    Picker("", selection: $showCardio) {
+                        Text("Lifts").tag(false)
+                        Text("Cardio")
+                            .tag(true)
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                    .tint(.white)
+                    .foregroundStyle(.red)
+                    
+                    ScrollView {
+                        if !showCardio {
+                            ForEach($lifts.sorted(by: { $0.wrappedValue.date < $1.wrappedValue.date })) { $lift in
+                                NavigationLink(
+                                    destination: LiftView(
+                                        lift: $lift,
+                                        onDelete: {
+                                            if let index = lifts.firstIndex(where: { $0.id == lift.id }) {
+                                                lifts.remove(at: index)
+                                            }
+                                        }
+                                    )
+                                ) {
+                                    WorkoutCard(workout: lift)
+                                }
+                            }
+                        } else {
+                            ForEach(cardios.sortedBy({ $0.date }, ascending: false)) { cardio in
+                                WorkoutCard(workout: cardio)
+                            }
                         }
                     }
+                    
+                    
                 }
-                
-                
-                //Spacer()
-            }
-            .padding(.horizontal, 10)
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .background(.black)
-            .sheet(isPresented: $showingSheet) {
-                sheetView.background(Color(red: 0.1, green: 0.1, blue: 0.1))
+                .padding(.horizontal, 10)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(.black)
+                .sheet(isPresented: $showingSheet) {
+                    NavigationStack {
+                        sheetView.background(Color(red: 0.1, green: 0.1, blue: 0.1))
+                    }
+                    
+                }
             }
         }
     }
-    
+        
     var sheetView: some View {
         VStack(alignment: .leading) {
             Button {
@@ -98,9 +114,9 @@ struct LogView: View {
                 .font(.title)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
+                .padding(.bottom, 40)
+                .padding(.top, 30)
             ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0, green: 0, blue: 0))
                 VStack(alignment: .leading) {
                     TextField("", text: $inputName, prompt: Text("enter name").foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6)))
                         .foregroundStyle(.white)
@@ -110,6 +126,24 @@ struct LogView: View {
                     Rectangle().frame(height: 1).foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
                     TextField("", text: $inputPRs, prompt: Text("number of PRs").foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6)))
                         .foregroundStyle(.white)
+                    Rectangle().frame(height: 1).foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                    
+                    HStack {
+                        Text("Muscles:")
+                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                            .padding(.trailing, 5)
+                        
+                        NavigationLink(destination: MuscleSelectionView(selectedMuscles: $selectedMuscles)) {
+                            Text("Select Muscles")
+                                .foregroundStyle(.white)
+                                .padding(5)
+                                .background(Color(red: 0.15, green: 0.15, blue: 0.15))
+                                .cornerRadius(10)
+                        }
+                        .buttonStyle(.plain)
+
+                    }
+                    
                     Rectangle().frame(height: 1).foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
                     HStack {
                         DatePicker(
@@ -123,12 +157,14 @@ struct LogView: View {
     
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
-                .padding(25)
+                .padding(30)
                    
             }.frame(height: UIScreen.main.bounds.height * 0.2)
+            Spacer()
             Button {
                 showingSheet.toggle()
-                lifts.append(Lift(name: inputName, date: insertDate, numberSets: Int(inputSets) ?? -1, muscles: [], numberPRs: Int(inputPRs) ?? -1))
+                lifts.append(Lift(name: inputName, date: insertDate, numberSets: Int(inputSets) ?? -1, muscles: selectedMuscles, numberPRs: Int(inputPRs) ?? -1))
+                selectedMuscles = []
                 inputName = ""
                 inputSets = ""
                 inputPRs = ""
@@ -136,10 +172,12 @@ struct LogView: View {
             } label: {
                 Text("Finish")
                     .foregroundStyle(.cyan)
-            }.padding(.top, 20)
+            }.padding(.top, 300)
                 .frame(maxWidth: .infinity)
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(10)
+            .background(.black)
+            
     }
     
     var topButtonHStack: some View {
@@ -218,6 +256,164 @@ struct WorkoutCard: View {
         }
     }
 }
+
+struct LiftView: View {
+    @Binding var lift: Lift
+    @Environment(\.dismiss) var dismiss
+    
+    var onDelete: (() -> Void)?
+    
+    var body: some View {
+        ZStack (alignment: .top) {
+            Color.black.ignoresSafeArea()
+            VStack(alignment: .leading) {
+                TextField("Name", text: $lift.name)
+                    .font(.title)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    
+                DatePicker("Start Date: ", selection: $lift.date, displayedComponents: .date)
+                    .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                    .colorScheme(.dark)
+                
+                HStack {
+                    Text("Muscles:")
+                        .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                    Spacer()
+                    NavigationLink(destination: MuscleSelectionView(selectedMuscles: $lift.muscles)) {
+                        Text("Select Muscles")
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(Color(red: 0.15, green: 0.15, blue: 0.15))
+                            .cornerRadius(10)
+                            
+                    }
+                    .buttonStyle(.plain)
+                    .frame(alignment: .trailing)
+
+                }
+                
+                Stepper("Number of Sets: \(lift.numberSets)", value: $lift.numberSets)
+                    .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+
+                Stepper("Number of PRs: \(lift.numberPRs)", value: $lift.numberPRs)
+                    .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+
+                HStack {
+                    Spacer()
+                    
+                    Button {
+                        onDelete?()
+                        dismiss()
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                            .padding(.horizontal, 10)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Spacer()
+                    
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Submit", systemImage: "checkmark")
+                            .foregroundStyle(.cyan)
+                            .font(.headline)
+                            .padding(.horizontal, 10)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Spacer()
+                }
+                .padding(.top, 20)
+                
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        
+    }
+    
+}
+
+struct MuscleSelectionView: View {
+    @Binding var selectedMuscles: [Muscle]
+    
+    let allMuscles: [Muscle] = [
+        .chest, .triceps, .biceps,
+        .shoulders, .quads, .hamstrings,
+        .back
+    ]
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Select Muscles")
+                .font(.title)
+                .foregroundStyle(.white)
+                .padding(.top, 20)
+
+            VStack(spacing: 15) {
+                HStack(spacing: 10) {
+                    ForEach(allMuscles.prefix(3), id: \.self) { muscle in
+                        muscleButton(muscle)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack(spacing: 10) {
+                    ForEach(allMuscles.dropFirst(3).prefix(3), id: \.self) { muscle in
+                        muscleButton(muscle)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                HStack(spacing: 10) {
+                    ForEach(allMuscles.dropFirst(6), id: \.self) { muscle in
+                        muscleButton(muscle)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 25)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
+        .navigationTitle("Select Muscles")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func muscleButton(_ muscle: Muscle) -> some View {
+        Button {
+            toggleMuscle(muscle)
+        } label: {
+            Text(muscle.displayName)
+                .foregroundStyle(.white)
+                .padding(.vertical, 8)
+                .frame(width: 100)
+                .background(selectedMuscles.contains(muscle)
+                            ? Color.cyan
+                            : Color(red: 0.15, green: 0.15, blue: 0.15))
+                .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleMuscle(_ muscle: Muscle) {
+        if selectedMuscles.contains(muscle) {
+            selectedMuscles.removeAll { $0 == muscle }
+        } else {
+            selectedMuscles.append(muscle)
+        }
+    }
+}
+
+
+
 
 #Preview {
     LogView()
